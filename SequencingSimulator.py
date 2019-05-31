@@ -1,4 +1,5 @@
 from scipy import stats
+import bisect
 import random
 import os
 import numpy
@@ -11,6 +12,8 @@ complNucleotids = {
   "G": "C", 
   "C": "G"
 }
+
+insertionPositions = []
 
 # Mask for SNV formated so the last 2 bits can be used for nucleotid index in nucleotids list
 SNV = 0b100
@@ -39,6 +42,13 @@ def generateQuality(averageQuality, readSize):
 def numOfFragments(coverage, genomeSize, readSize):
     return int(round((coverage * genomeSize) / (2 * readSize)))
 
+# Finds the 1-based leftmost position where read matches refGenome.
+def getLeftmostPosition(refGenome, startingPosition, endingPosition):
+    pos = startingPosition
+    while((pos <= endingPosition) and isinstance(refGenome[pos], int) and  not(refGenome[pos] & SNV)):
+        pos += 1
+    return pos + 1 - bisect.bisect_right(insertionPositions, pos);
+
 # Generate one read. Direction defines should it be read from left to right or vice-versa.
 def generateSingleRead(readSize, refGenome, refPos, direction, complFunction):
     j = 0;
@@ -56,44 +66,47 @@ def generateSingleRead(readSize, refGenome, refPos, direction, complFunction):
         else:
             read.append(complFunction(nucleotids[refGenome[refPos] & 3]))
             refPos += direction
-    return "".join(read)
+    return ("".join(read), refPos - direction)
 
 # Genetares 2 FASTQ files which contain paired-end reads.
 def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileName):
     samFile = open(fileName + ".sam", "w")
     for refGenomeName, refGenome in refGenomeDict.items():
         samFile.write("@SQ SN:{} LN:{}\n".format(refGenomeName, len(refGenome)))
+        
     read1File = open(fileName + "_read1.fastq","w")
     read2File = open(fileName + "_read2.fastq", "w")
+    
     for refGenomeName, refGenome in refGenomeDict.items():
         genomeSize = len(refGenome)
         fragmentNumber = numOfFragments(coverage, genomeSize, readSize)
         for i in range(fragmentNumber):
-            # Insert size follows a normal distribution so we are simulating that.
+            # Insert size follows a normal distribution so we are simulating that
             recalInsertSize = int(numpy.random.normal(insertSize, insertSize * 0.05))
             # Randomly choose position for the next fragment.
             fragmentPosition = genomeSize
             while (fragmentPosition + recalInsertSize >= genomeSize):
                 fragmentPosition = int(random.random()*(genomeSize - recalInsertSize + 1))
-        
-            readId = ("%s_%d_%d_0:0_0:0_%d" %(refGenomeName,fragmentPosition, (fragmentPosition + recalInsertSize), i))
+            
+            readId = ("{}_{}_{}_{}".format(refGenomeName, (fragmentPosition +1), (fragmentPosition + recalInsertSize + 1), i))
             
             # Generate first paried-end read.
             refPos = fragmentPosition
-            readOne = generateSingleRead(readSize, refGenome, refPos, 1, lambda x: x)
+            readAndLastIndex = generateSingleRead(readSize, refGenome, refPos, 1, lambda x: x)
             qualityOfRead = generateQuality(quality, readSize)
+            read1File.write("@{}/1\n{}\n+\n{}\n".format(readId, readAndLastIndex[0], qualityOfRead))
 
-            read1File.write("@{}/1\n{}\n+\n{}\n".format(readId, readOne, qualityOfRead))
-            samFile.write("{} {} {} {}\n".format(readId, refPos, readOne, qualityOfRead))
+            leftmostPosition = getLeftmostPosition(refGenome, refPos, readAndLastIndex[1])
+            samFile.write("{} {} {} {}\n".format(readId, leftmostPosition, readAndLastIndex[0], qualityOfRead))
             
             # Generate second paried-end read.
             refPos = fragmentPosition + recalInsertSize
-            readTwo = generateSingleRead(readSize, refGenome, refPos, -1, lambda x: complNucleotids[x])
+            readAndFirstIndex = generateSingleRead(readSize, refGenome, refPos, -1, lambda x: complNucleotids[x])
             qualityOfRead = generateQuality(quality, readSize)
+            read2File.write("@{}/2\n{}\n+\n{}\n".format(readId, readAndFirstIndex[0], qualityOfRead)) 
 
-            read2File.write("@{}/2\n{}\n+\n{}\n".format(readId, readTwo, qualityOfRead))         
-            samFile.write("{} {} {} {}\n".format(readId, refPos, readTwo, qualityOfRead))
-
+            leftmostPosition = getLeftmostPosition(refGenome, readAndFirstIndex[1], refPos)        
+            samFile.write("{} {} {} {}\n".format(readId, leftmostPosition, readAndFirstIndex[0], qualityOfRead))
 
     read1File.close()
     read2File.close()
@@ -113,6 +126,7 @@ def insertMutations(refGenomeDict, errorSNV, errorInDel):
                     if (random.random() < 0.5): #Simulate insertion
                         # Randomly choose position from nucleotid list and add it in refGenome.
                         refGenome.insert(i, random.randrange(4))
+                        insertionPositions.append(i)
                     else: # Simulate deletion.
                         # Replace nucleotid with mask for deletion.
                         refGenome[i] = DEL
@@ -184,4 +198,4 @@ def simulatePairedEndSequencing(refGenomeFile, quality, coverage, readSize, inse
             print("File not found. Please check the path and the name and try again.")
 
 
-simulatePairedEndSequencing("proba.fasta", 70, 3, 7, 12)
+simulatePairedEndSequencing("proba.fasta", 70, 3, 7, 12, 0, 0.2)
