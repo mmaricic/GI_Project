@@ -1,4 +1,4 @@
-Illumina paired-end sequencing simulator.
+Illumina paired-end read sequencing simulator.
 
 Itroduction
 ============
