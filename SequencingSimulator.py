@@ -78,6 +78,7 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
     read2File = open(fileName + "_read2.fastq", "w")
     
     for refGenomeName, refGenome in refGenomeDict.items():
+        print("Sequencing started")
         genomeSize = len(refGenome)
         fragmentNumber = numOfFragments(coverage, genomeSize, readSize)
         for i in range(fragmentNumber):
@@ -97,17 +98,22 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
             read1File.write("@{}/1\n{}\n+\n{}\n".format(readId, readAndLastIndex[0], qualityOfRead))
 
             leftmostPosition = getLeftmostPosition(refGenome, refPos, readAndLastIndex[1])
-            samFile.write("{} {} {} {}\n".format(readId, leftmostPosition, readAndLastIndex[0], qualityOfRead))
+            samFile.write("{}\t{}\t{}\t{}\n".format(readId, leftmostPosition, readAndLastIndex[0], qualityOfRead))
             
             # Generate second paried-end read.
             refPos = fragmentPosition + recalInsertSize
             readAndFirstIndex = generateSingleRead(readSize, refGenome, refPos, -1, lambda x: complNucleotids[x])
             qualityOfRead = generateQuality(quality, readSize)
             read2File.write("@{}/2\n{}\n+\n{}\n".format(readId, readAndFirstIndex[0], qualityOfRead)) 
-
+            originalRead = []
+            i = len(readAndFirstIndex[0]) - 1
+            while(i > -1):
+                originalRead.append(complNucleotids[readAndFirstIndex[0][i]])
+                i-=1
             leftmostPosition = getLeftmostPosition(refGenome, readAndFirstIndex[1], refPos)        
-            samFile.write("{} {} {} {}\n".format(readId, leftmostPosition, readAndFirstIndex[0], qualityOfRead))
+            samFile.write("{}\t{}\t{}\t{}\n".format(readId, leftmostPosition, "".join(originalRead), qualityOfRead))
 
+    print("Sequencing ended")
     read1File.close()
     read2File.close()
     samFile.close()
@@ -198,4 +204,4 @@ def simulatePairedEndSequencing(refGenomeFile, quality, coverage, readSize, inse
             print("File not found. Please check the path and the name and try again.")
 
 
-simulatePairedEndSequencing("proba.fasta", 70, 3, 7, 12, 0, 0.2)
+#simulatePairedEndSequencing("xxx.fa", 70, 4, 75, 100, 0, 0)
