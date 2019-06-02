@@ -10,9 +10,11 @@ Content
 **Simulator** - folder containing Simulator and Tests for it written in Jupyter notebook
   SequencingSimulator.ipynb - Simulator for paired-end reads
   Tests.ipynb - Tests for simulator
+
 **BWA-MEM Evaluation** - folder contaning neseccary python scripts for testing BWA-MEM tool
   SequencingSimulator.py - Simulator for paired-end reads (clean python)
   BWA-MEM_AlignmentEvaluation.py - Script for evaluating quality of alignments for BWA-MEM tool based on SAM file produced by our simulator
+  
 **Examples** - folder containing examples for testing the alghorithm
 
 Instructions for use
