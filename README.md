@@ -14,8 +14,7 @@ Content
 **BWA-MEM Evaluation** - folder contaning neseccary python scripts for testing BWA-MEM tool
   SequencingSimulator.py - Simulator for paired-end reads (clean python)
   BWA-MEM_AlignmentEvaluation.py - Script for evaluating quality of alignments for BWA-MEM tool based on SAM file produced by our simulator
-  
-**Examples** - folder containing examples for testing the alghorithm
+
 
 Instructions for use
 =====================
