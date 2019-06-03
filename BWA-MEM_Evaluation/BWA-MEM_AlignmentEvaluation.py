@@ -25,7 +25,7 @@ def compareSamFiles(ourSamFile, bwaSamFile):
 		mapId = splitted[0] + splitted[9]
 		if alignments.get(mapId) == splitted[3]:
 			correctlyAligned+=1
-	return correctlyAligned/len(alignments)
+	return correctlyAligned*100/len(alignments)
 
 def evaluate():
 	values = [(0, 0), ()...] #add values you want to evaluate
