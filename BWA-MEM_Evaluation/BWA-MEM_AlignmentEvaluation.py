@@ -34,7 +34,7 @@ def evaluate():
 		fileName = "" #add the name of refGenome file - without extension!
 		simulatePairedEndSequencing("{}.fa".format(fileName), 70, 4, 150, 500, errorRate[0], errorRate[1])
 		executeBwaMem(fileName, errorRate)
-		result = compareSamFiles("{}.sam".format(fileName), "{}_bwa.sam".format(fileName))
+		result = compareSamFiles("{}_{}.sam".format(fileName, errorRate), "{}_bwa.sam".format(fileName))
 		resultsFile.write("Eror rate for SNV: {}, error rate for INDEL: {}, BWA-MEM accuracy of alignment is: {}%.\n".format(errorRate[0], errorRate[1], result))
 
 evaluate()
