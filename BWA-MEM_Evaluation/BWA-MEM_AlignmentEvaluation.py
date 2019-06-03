@@ -2,7 +2,7 @@ import subprocess
 from SequencingSimulator import simulatePairedEndSequencing
 
 
-def executeBwaMem(fileName):
+def executeBwaMem(fileName, errorRate):
     subprocess.run(["bwa", "index", "{}.fa".format(fileName)])
     subprocess.run(["bwa" ,"mem", "{}.fa".format(fileName), "{}_{}_read1.fastq".format(fileName, errorRate), "{}_{}_read2.fastq".format(fileName, errorRate)], stdout=open("{}_bwa.sam".format(fileName), "w"))
 
@@ -33,7 +33,7 @@ def evaluate():
 	for errorRate in values:
 		fileName = "" #add the name of refGenome file - without extension!
 		simulatePairedEndSequencing("{}.fa".format(fileName), 70, 4, 150, 500, errorRate[0], errorRate[1])
-		executeBwaMem(fileName)
+		executeBwaMem(fileName, errorRate)
 		result = compareSamFiles("{}.sam".format(fileName), "{}_bwa.sam".format(fileName))
 		resultsFile.write("Eror rate for SNV: {}, error rate for INDEL: {}, BWA-MEM accuracy of alignment is: {}%.\n".format(errorRate[0], errorRate[1], result))
 
