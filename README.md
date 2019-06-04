@@ -13,7 +13,7 @@ Content
 
 **BWA-MEM Evaluation** - folder contaning neseccary python scripts for testing BWA-MEM tool
   SequencingSimulator.py - Simulator for paired-end reads (clean python)
-  BWA-MEM_AlignmentEvaluation.py - Script for evaluating quality of alignments for BWA-MEM tool based on SAM file produced by our simulator
+  BWA-MEM_AlignmentEvaluation.py - Script used for evaluating quality of alignments for BWA-MEM tool based on SAM file produced by our simulator
 
 
 Instructions for use
@@ -30,3 +30,8 @@ For running the simulator you need to call "simulatePairedEndReads" function. Th
 - [OPTIONAL] errorInDel(=0) - Error probability for INS/DEL. Sum of this and errorSNV must not be larger than 1.
 
 As a result, 2 FASTQ files containg paired-end reads are created. Also it generates SAM file containing the alignments of reads in reference genome.
+
+
+Links
+============
+Presentation of the project: https://www.youtube.com/watch?v=mbHci0yn4v4&feature=youtu.be&fbclid=IwAR2Vz0Li1lSJwaUTBZLTi2XfYAsd0BjvMXugO6rX63XQfDGEjgx8p1MS_rM

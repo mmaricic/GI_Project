@@ -84,7 +84,7 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
         fragmentNumber = numOfFragments(coverage, genomeSize, readSize)
         for i in range(fragmentNumber):
             if i % 10000 == 0:
-                print("[PREPROCESS]: created {} paired end reads".format(i))
+                print("[PREPROCESS]: Creating paired end reads")
             # Insert size follows a normal distribution so we are simulating that
             recalInsertSize = int(numpy.random.normal(insertSize, insertSize * 0.05))
             # Randomly choose position for the next fragment.
