@@ -15,7 +15,7 @@ complNucleotids = {
   "N": "N"
 }
 
-insertionPositions = []
+insertionPositions = {}
 
 # Mask for SNV formated so the last 2 bits can be used for nucleotid index in nucleotids list
 SNV = 0b100
@@ -45,11 +45,11 @@ def numOfFragments(coverage, genomeSize, readSize):
     return int(round((coverage * genomeSize) / (2 * readSize)))
 
 # Finds the 1-based leftmost position where read matches refGenome.
-def getLeftmostPosition(refGenome, startingPosition, endingPosition):
+def getLeftmostPosition(refGenome, startingPosition, endingPosition, refGenomeName):
     pos = startingPosition
     while((pos <= endingPosition) and isinstance(refGenome[pos], int) and  not(refGenome[pos] & SNV)):
         pos += 1
-    return pos + 1 - bisect.bisect_right(insertionPositions, pos);
+    return pos + 1 - bisect.bisect_right(insertionPositions.get(refGenomeName, []), pos);
 
 # Generate one read. Direction defines should it be read from left to right or vice-versa.
 def generateSingleRead(readSize, refGenome, refPos, direction, complFunction):
@@ -80,11 +80,12 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
     read2File = open("{}_({}, {})_read2.fastq".format(fileName, errorSNV, errorInDel), "w")
     
     for refGenomeName, refGenome in refGenomeDict.items():
+        print("[PREPROCESS]: Sequencing " + refGenomeName)
         genomeSize = len(refGenome)
         fragmentNumber = numOfFragments(coverage, genomeSize, readSize)
         for i in range(fragmentNumber):
-            if i % 10000 == 0:
-                print("[PREPROCESS]: Creating paired end reads")
+            if i % 10000 == 0 and i > 0:
+                print("[PREPROCESS]: created {} paired end reads".format(i))
             # Insert size follows a normal distribution so we are simulating that
             recalInsertSize = int(numpy.random.normal(insertSize, insertSize * 0.05))
             # Randomly choose position for the next fragment.
@@ -100,7 +101,7 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
             qualityOfRead = generateQuality(quality, readSize)
             read1File.write("@{}/1\n{}\n+\n{}\n".format(readId, readAndLastIndex[0], qualityOfRead))
 
-            leftmostPosition = getLeftmostPosition(refGenome, refPos, readAndLastIndex[1])
+            leftmostPosition = getLeftmostPosition(refGenome, refPos, readAndLastIndex[1], refGenomeName)
             samFile.write("{}\t{}\t{}\t{}\n".format(readId, leftmostPosition, readAndLastIndex[0], qualityOfRead))
             
             # Generate second paried-end read.
@@ -113,7 +114,7 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
             while(i > -1):
                 originalRead.append(complNucleotids[readAndFirstIndex[0][i]])
                 i-=1
-            leftmostPosition = getLeftmostPosition(refGenome, readAndFirstIndex[1], refPos)        
+            leftmostPosition = getLeftmostPosition(refGenome, readAndFirstIndex[1], refPos, refGenomeName)        
             samFile.write("{}\t{}\t{}\t{}\n".format(readId, leftmostPosition, "".join(originalRead), qualityOfRead))
 
     read1File.close()
@@ -122,7 +123,7 @@ def generateReads(refGenomeDict, quality, coverage, readSize, insertSize, fileNa
 
 # Generates mutations by inserting them in referenceGenome.
 def insertMutations(refGenomeDict, errorSNV, errorInDel):
-    for refGenome in refGenomeDict.values():
+    for refGenomeName, refGenome in refGenomeDict.items():
         # Insert SNV.
         numOfSNV = round(len(refGenome)*errorSNV)
         while(numOfSNV > 0):
@@ -134,6 +135,8 @@ def insertMutations(refGenomeDict, errorSNV, errorInDel):
         
         # Insert INDEL.
         numOfInDel = round(len(refGenome)*errorInDel)
+        print(numOfInDel)
+        seqInsertions = []
         while(numOfInDel > 0):
             errorPos = -1
             while(errorPos < 0 or isinstance(refGenome[errorPos], int) or refGenome[errorPos] == 'D'):
@@ -141,11 +144,13 @@ def insertMutations(refGenomeDict, errorSNV, errorInDel):
             if (random.random() < 0.5): #Simulate insertion
                  # Randomly choose position from nucleotid list and add it in refGenome.
                 refGenome.insert(errorPos, random.randrange(5))
-                insertionPositions.append(errorPos)
+                seqInsertions.append(errorPos)
             else: # Simulate deletion.
                 # Replace nucleotid with mask for deletion.
                 refGenome[errorPos] = DEL
             numOfInDel -= 1
+        seqInsertions.sort()
+        insertionPositions[refGenomeName] = seqInsertions
 
 
 # Loads genome from a file.
