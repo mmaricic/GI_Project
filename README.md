@@ -34,4 +34,4 @@ As a result, 2 FASTQ files containg paired-end reads are created. Also it genera
 
 Links
 ============
-Presentation of the project: https://www.youtube.com/watch?v=mbHci0yn4v4&feature=youtu.be&fbclid=IwAR2Vz0Li1lSJwaUTBZLTi2XfYAsd0BjvMXugO6rX63XQfDGEjgx8p1MS_rM
+Presentation of the project: https://www.youtube.com/watch?v=t0JknCunXog&feature=youtu.be
